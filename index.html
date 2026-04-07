@@ -15,6 +15,24 @@
             color: white;
             padding: 15px;
             text-align: center;
+            position: relative;
+        }
+
+        .logout {
+            position: absolute;
+            right: 20px;
+            top: 15px;
+            background: red;
+            color: white;
+            border: none;
+            padding: 8px;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        .welcome {
+            margin-top: 10px;
+            font-size: 18px;
         }
 
         .container {
@@ -45,13 +63,6 @@
             border: none;
             border-radius: 5px;
         }
-
-        .logout {
-            position: absolute;
-            right: 20px;
-            top: 15px;
-            background: red;
-        }
     </style>
 </head>
 
@@ -59,6 +70,7 @@
 
 <header>
     <h2>AI Health & Agriculture Dashboard</h2>
+    <div class="welcome" id="welcome"></div>
     <button class="logout" onclick="logout()">Logout</button>
 </header>
 
@@ -66,31 +78,26 @@
 
     <div class="card" onclick="openFeature('animal')">
         <h3>Animal Detector</h3>
-        <p>Detect animal diseases</p>
         <button>Open</button>
     </div>
 
     <div class="card" onclick="openFeature('plant')">
-        <h3>Plant Disease Detector</h3>
-        <p>Analyze plant leaf diseases</p>
+        <h3>Plant Detector</h3>
         <button>Open</button>
     </div>
 
     <div class="card" onclick="openFeature('treatment')">
         <h3>Treatment</h3>
-        <p>Get medicine suggestions</p>
         <button>Open</button>
     </div>
 
     <div class="card" onclick="openFeature('blood')">
         <h3>Blood Report Analyzer</h3>
-        <p>Analyze medical reports</p>
         <button>Open</button>
     </div>
 
     <div class="card" onclick="openFeature('diet')">
         <h3>Diet Planner</h3>
-        <p>Personalized diet suggestions</p>
         <button>Open</button>
     </div>
 
@@ -98,38 +105,42 @@
 
 <script>
 
-// 🔐 Protect page (login check)
-if(!localStorage.getItem("user")){
+// 🔐 LOGIN CHECK
+if(localStorage.getItem("loggedIn") !== "true"){
     window.location.href = "login.html";
 }
 
-// 🚀 Feature navigation
+// 👤 SHOW USERNAME
+let user = localStorage.getItem("user");
+document.getElementById("welcome").innerText = "Welcome, " + user;
+
+// 🚀 FEATURE NAVIGATION
 function openFeature(feature){
 
     if(feature === "animal"){
-        window.location.href = "animal.html";
+        alert("Animal Detection Page");
     }
 
     if(feature === "plant"){
-        window.location.href = "plant.html";
+        alert("Plant Detection Page");
     }
 
     if(feature === "treatment"){
-        window.location.href = "treatment.html";
+        alert("Treatment Page");
     }
 
     if(feature === "blood"){
-        window.location.href = "blood.html";
+        alert("Blood Report Analyzer");
     }
 
     if(feature === "diet"){
-        window.location.href = "diet.html";
+        alert("Diet Planner");
     }
 }
 
-// 🔓 Logout
+// 🔓 LOGOUT
 function logout(){
-    localStorage.removeItem("user");
+    localStorage.removeItem("loggedIn");
     window.location.href = "login.html";
 }
 
