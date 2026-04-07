@@ -1,105 +1,63 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>AI Disease Detection Dashboard</title>
+    <title>AI Disease Detection</title>
 
     <style>
         body {
             font-family: Arial;
             background: #e6e6e6;
-            margin: 0;
-        }
-
-        header {
-            background: #0072ff;
-            color: white;
-            padding: 15px;
             text-align: center;
-            position: relative;
         }
 
-        .logout {
-            position: absolute;
-            right: 20px;
-            top: 15px;
-            background: red;
-            color: white;
-            border: none;
-            padding: 8px;
-            border-radius: 5px;
-            cursor: pointer;
-        }
-
-        .welcome {
-            margin-top: 10px;
-            font-size: 18px;
-        }
-
-        .container {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 20px;
-            padding: 20px;
-        }
-
-        .card {
+        .box {
             background: white;
             padding: 30px;
+            margin: 50px auto;
+            width: 350px;
             border-radius: 10px;
-            text-align: center;
             box-shadow: 0 0 10px gray;
-            cursor: pointer;
         }
 
-        .card:hover {
-            background: #f0f8ff;
+        img {
+            width: 200px;
+            margin-top: 10px;
         }
 
         button {
-            margin-top: 10px;
-            padding: 8px;
-            background: #0072ff;
+            padding: 10px;
+            margin: 10px;
+            background: green;
             color: white;
             border: none;
             border-radius: 5px;
+            width: 90%;
         }
     </style>
 </head>
 
 <body>
 
-<header>
-    <h2>AI Health & Agriculture Dashboard</h2>
-    <div class="welcome" id="welcome"></div>
-    <button class="logout" onclick="logout()">Logout</button>
-</header>
+<div class="box">
 
-<div class="container">
+    <h2 id="welcome"></h2>
 
-    <div class="card" onclick="openFeature('animal')">
-        <h3>Animal Detector</h3>
-        <button>Open</button>
-    </div>
+    <h3>Select Feature</h3>
 
-    <div class="card" onclick="openFeature('plant')">
-        <h3>Plant Detector</h3>
-        <button>Open</button>
-    </div>
+    <button onclick="setMode('animal')">Animal Detection</button>
+    <button onclick="setMode('plant')">Plant Detection</button>
 
-    <div class="card" onclick="openFeature('treatment')">
-        <h3>Treatment</h3>
-        <button>Open</button>
-    </div>
+    <hr>
 
-    <div class="card" onclick="openFeature('blood')">
-        <h3>Blood Report Analyzer</h3>
-        <button>Open</button>
-    </div>
+    <input type="file" id="image" onchange="previewImage()"><br>
+    <img id="preview">
 
-    <div class="card" onclick="openFeature('diet')">
-        <h3>Diet Planner</h3>
-        <button>Open</button>
-    </div>
+    <button onclick="detect()">Detect Disease</button>
+
+    <h3 id="result"></h3>
+    <p id="treatment"></p>
+
+    <button onclick="logout()">Logout</button>
 
 </div>
 
@@ -110,31 +68,57 @@ if(localStorage.getItem("loggedIn") !== "true"){
     window.location.href = "login.html";
 }
 
-// 👤 SHOW USERNAME
+// 👤 USERNAME
 let user = localStorage.getItem("user");
 document.getElementById("welcome").innerText = "Welcome, " + user;
 
-// 🚀 FEATURE NAVIGATION
-function openFeature(feature){
+// 🎯 MODE (animal / plant)
+let mode = "plant";
 
-    if(feature === "animal"){
-        alert("Animal Detection Page");
+function setMode(type){
+    mode = type;
+    alert(type.toUpperCase() + " mode selected");
+}
+
+// 📷 IMAGE PREVIEW
+function previewImage(){
+    let file = document.getElementById("image").files[0];
+    let reader = new FileReader();
+    reader.onload = function(){
+        document.getElementById("preview").src = reader.result;
+    }
+    reader.readAsDataURL(file);
+}
+
+// 🤖 DETECTION + TREATMENT
+function detect(){
+
+    if(mode === "plant"){
+        let diseases = ["Leaf Spot", "Powdery Mildew", "Healthy"];
+        let treatments = [
+            "Use fungicide spray",
+            "Apply pesticide",
+            "No treatment needed"
+        ];
+
+        let i = Math.floor(Math.random()*3);
+
+        document.getElementById("result").innerText = "Plant Disease: " + diseases[i];
+        document.getElementById("treatment").innerText = "Treatment: " + treatments[i];
     }
 
-    if(feature === "plant"){
-        alert("Plant Detection Page");
-    }
+    if(mode === "animal"){
+        let diseases = ["Skin Infection", "Foot & Mouth", "Healthy"];
+        let treatments = [
+            "Apply antiseptic cream",
+            "Vaccinate immediately",
+            "No treatment needed"
+        ];
 
-    if(feature === "treatment"){
-        alert("Treatment Page");
-    }
+        let i = Math.floor(Math.random()*3);
 
-    if(feature === "blood"){
-        alert("Blood Report Analyzer");
-    }
-
-    if(feature === "diet"){
-        alert("Diet Planner");
+        document.getElementById("result").innerText = "Animal Disease: " + diseases[i];
+        document.getElementById("treatment").innerText = "Treatment: " + treatments[i];
     }
 }
 
