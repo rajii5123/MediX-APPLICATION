@@ -2,148 +2,168 @@
 <html>
 <head>
 <title>AI Dashboard</title>
-
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-
+<script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.17.0/dist/tf.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/mobilenet@2.1.1/dist/mobilenet.min.js"></script>
 <style>
 body{margin:0;font-family:Arial;background:#1f2a36;color:white;}
 header{background:#2c3e50;padding:15px;text-align:center;}
-
 .row{display:flex;justify-content:space-around;margin:20px;}
 .card{background:#2c3e50;padding:20px;width:22%;text-align:center;border-radius:10px;}
-
-.circle{
-width:100px;height:100px;border-radius:50%;
-background:conic-gradient(#00d4ff 80%,#444 0%);
-display:flex;align-items:center;justify-content:center;margin:auto;
-}
-
+.circle{width:100px;height:100px;border-radius:50%;background:conic-gradient(#00d4ff 80%,#444 0%);display:flex;align-items:center;justify-content:center;margin:auto;}
 .section{display:flex;margin:20px;}
 .box{background:#2c3e50;padding:20px;margin:10px;flex:1;border-radius:10px;}
-
-button{padding:10px;margin:10px;background:#00d4ff;border:none;border-radius:5px;}
-img{margin-top:10px;}
+button{padding:10px;margin:10px;background:#00d4ff;border:none;border-radius:5px;cursor:pointer;color:#000;font-weight:bold;}
+button:disabled{background:#555;color:#999;cursor:not-allowed;}
+img{margin-top:10px;border-radius:8px;max-width:180px;}
+.status-bar{background:#1a2533;border-radius:8px;padding:10px 15px;margin:10px 0;font-size:13px;color:#aaa;text-align:center;}
+.confidence{display:inline-block;padding:3px 8px;border-radius:4px;font-size:12px;margin-left:8px;font-weight:bold;}
+.high{background:#1a6b3a;color:#7eff9e;}
+.med{background:#6b5a1a;color:#ffd96e;}
+.low{background:#6b1a1a;color:#ff8e8e;}
+.result-box{background:#1a2533;border-radius:8px;padding:12px;margin-top:8px;border-left:4px solid #00d4ff;}
+.result-label{font-size:15px;font-weight:bold;color:#fff;}
+.result-treatment{font-size:13px;color:#aeddf8;margin-top:6px;}
+.result-raw{font-size:11px;color:#888;margin-top:6px;font-style:italic;}
+.spinner{display:inline-block;width:18px;height:18px;border:3px solid #555;border-top:3px solid #00d4ff;border-radius:50%;animation:spin 0.8s linear infinite;vertical-align:middle;margin-right:8px;}
+@keyframes spin{to{transform:rotate(360deg);}}
+#modelStatus{text-align:center;padding:8px;background:#152030;font-size:12px;color:#aaa;border-bottom:1px solid #2c3e50;}
 </style>
 </head>
-
 <body>
-
+<div id="modelStatus">⏳ Loading AI model... (first load may take a moment)</div>
 <header>
 <h2>AI Health & Agriculture Dashboard</h2>
 <p id="welcome"></p>
 </header>
-
-<!-- PROGRESS -->
 <div class="row">
 <div class="card"><h3>Health</h3><div class="circle"><span>85%</span></div></div>
 <div class="card"><h3>Crop</h3><div class="circle"><span>78%</span></div></div>
 <div class="card"><h3>Accuracy</h3><div class="circle"><span>92%</span></div></div>
 <div class="card"><h3>System</h3><div class="circle"><span>88%</span></div></div>
 </div>
-
-<!-- CHARTS -->
 <div class="section">
 <div class="box"><h3>Blood Analysis</h3><canvas id="bloodChart"></canvas></div>
 <div class="box"><h3>Health Graph</h3><canvas id="healthChart"></canvas></div>
 </div>
-
 <div class="section">
 <div class="box"><h3>Crop Resistance</h3><canvas id="cropChart"></canvas></div>
 </div>
-
-<!-- DETECTION -->
 <div class="section">
-
 <div class="box">
-<h3>🌿 Plant Detection</h3>
-<input type="file" id="plantImage" onchange="previewPlant()"><br>
-<img id="plantPreview" width="120">
-<button onclick="detectPlant()">Detect</button>
-<h4 id="plantResult"></h4>
-<p id="plantTreatment"></p>
+<h3>🌿 Plant Disease Detection</h3>
+<div class="status-bar" id="plantStatus">Upload a plant image or paste a URL, then click Detect</div>
+<input type="file" id="plantImage" accept="image/*" onchange="previewPlant()"><br>
+<input type="text" id="plantUrl" placeholder="Or paste an image URL here..." style="width:90%;padding:7px;margin:8px 0;background:#1a2533;color:#fff;border:1px solid #444;border-radius:5px;">
+<button onclick="loadPlantUrl()" style="padding:6px 12px;margin:2px;font-size:12px;">Load URL</button><br>
+<img id="plantPreview" width="150" style="display:none;"><br>
+<button id="plantBtn" onclick="detectPlant()" disabled>Detect Disease</button>
+<div id="plantResultBox" style="display:none;" class="result-box">
+  <div class="result-label" id="plantResult"></div>
+  <div class="result-treatment" id="plantTreatment"></div>
+  <div class="result-raw" id="plantRaw"></div>
 </div>
-
+</div>
 <div class="box">
-<h3>🐄 Animal Detection</h3>
-<input type="file" id="animalImage" onchange="previewAnimal()"><br>
-<img id="animalPreview" width="120">
-<button onclick="detectAnimal()">Detect</button>
-<h4 id="animalResult"></h4>
-<p id="animalTreatment"></p>
+<h3>🐄 Animal Health Detection</h3>
+<div class="status-bar" id="animalStatus">Upload an animal image or paste a URL, then click Detect</div>
+<input type="file" id="animalImage" accept="image/*" onchange="previewAnimal()"><br>
+<input type="text" id="animalUrl" placeholder="Or paste an image URL here..." style="width:90%;padding:7px;margin:8px 0;background:#1a2533;color:#fff;border:1px solid #444;border-radius:5px;">
+<button onclick="loadAnimalUrl()" style="padding:6px 12px;margin:2px;font-size:12px;">Load URL</button><br>
+<img id="animalPreview" width="150" style="display:none;"><br>
+<button id="animalBtn" onclick="detectAnimal()" disabled>Detect Condition</button>
+<div id="animalResultBox" style="display:none;" class="result-box">
+  <div class="result-label" id="animalResult"></div>
+  <div class="result-treatment" id="animalTreatment"></div>
+  <div class="result-raw" id="animalRaw"></div>
 </div>
-
 </div>
-
+</div>
 <div style="text-align:center;">
 <button onclick="logout()" style="background:red;color:white;">Logout</button>
 </div>
-
 <script>
-
-// LOGIN CHECK
-if(localStorage.getItem("loggedIn")!=="true"){
-    window.location.href="login.html";
-}
-
-// USER
+if(localStorage.getItem("loggedIn")!=="true"){ window.location.href="login.html"; }
 document.getElementById("welcome").innerText="Welcome, "+localStorage.getItem("user");
-
-// CHARTS
-new Chart(document.getElementById("bloodChart"),{
-type:"bar",
-data:{labels:["RBC","WBC","Platelets"],datasets:[{data:[4.5,7.2,250]}]}
-});
-
-new Chart(document.getElementById("healthChart"),{
-type:"line",
-data:{labels:["D1","D2","D3","D4"],datasets:[{data:[60,70,80,85]}]}
-});
-
-new Chart(document.getElementById("cropChart"),{
-type:"bar",
-data:{labels:["Water","Soil","Sun"],datasets:[{data:[80,70,90]}]}
-});
-
-// IMAGE PREVIEW
+new Chart(document.getElementById("bloodChart"),{type:"bar",data:{labels:["RBC","WBC","Platelets"],datasets:[{data:[4.5,7.2,250],backgroundColor:["#00d4ff","#ff6b6b","#ffd93d"]}]},options:{plugins:{legend:{display:false}},scales:{y:{ticks:{color:"#aaa"},grid:{color:"#333"}},x:{ticks:{color:"#aaa"},grid:{color:"#333"}}}}});
+new Chart(document.getElementById("healthChart"),{type:"line",data:{labels:["D1","D2","D3","D4"],datasets:[{data:[60,70,80,85],borderColor:"#00d4ff",tension:0.4,fill:true,backgroundColor:"rgba(0,212,255,0.1)"}]},options:{plugins:{legend:{display:false}},scales:{y:{ticks:{color:"#aaa"},grid:{color:"#333"}},x:{ticks:{color:"#aaa"},grid:{color:"#333"}}}}});
+new Chart(document.getElementById("cropChart"),{type:"bar",data:{labels:["Water","Soil","Sun"],datasets:[{data:[80,70,90],backgroundColor:["#00d4ff","#7bc47b","#ffd93d"]}]},options:{plugins:{legend:{display:false}},scales:{y:{ticks:{color:"#aaa"},grid:{color:"#333"}},x:{ticks:{color:"#aaa"},grid:{color:"#333"}}}}});
+let model=null;
+async function loadModel(){
+  try{ model=await mobilenet.load(); document.getElementById("modelStatus").innerHTML="✅ AI Model ready — MobileNet (TensorFlow.js, runs locally in your browser)"; document.getElementById("plantBtn").disabled=false; document.getElementById("animalBtn").disabled=false; }
+  catch(e){ document.getElementById("modelStatus").innerHTML="❌ Model failed to load. Please refresh."; }
+}
+loadModel();
+function loadPlantUrl(){
+  let url=document.getElementById("plantUrl").value.trim(); if(!url){document.getElementById("plantStatus").textContent="⚠️ Please paste a valid image URL.";return;}
+  let img=document.getElementById("plantPreview"); img.crossOrigin="anonymous";
+  img.onload=()=>{img.style.display="block";document.getElementById("plantStatus").textContent="Image loaded. Click Detect Disease.";document.getElementById("plantResultBox").style.display="none";};
+  img.onerror=()=>{document.getElementById("plantStatus").textContent="❌ Could not load image. Try a direct link ending in .jpg or .png";}; img.src=url;
+}
+function loadAnimalUrl(){
+  let url=document.getElementById("animalUrl").value.trim(); if(!url){document.getElementById("animalStatus").textContent="⚠️ Please paste a valid image URL.";return;}
+  let img=document.getElementById("animalPreview"); img.crossOrigin="anonymous";
+  img.onload=()=>{img.style.display="block";document.getElementById("animalStatus").textContent="Image loaded. Click Detect Condition.";document.getElementById("animalResultBox").style.display="none";};
+  img.onerror=()=>{document.getElementById("animalStatus").textContent="❌ Could not load image. Try a direct link ending in .jpg or .png";}; img.src=url;
+}
 function previewPlant(){
-let f=document.getElementById("plantImage").files[0];
-let r=new FileReader();
-r.onload=()=>document.getElementById("plantPreview").src=r.result;
-r.readAsDataURL(f);
+  let f=document.getElementById("plantImage").files[0]; if(!f)return;
+  let r=new FileReader(); r.onload=()=>{let img=document.getElementById("plantPreview");img.src=r.result;img.style.display="block";document.getElementById("plantStatus").textContent="Image ready. Click Detect Disease.";document.getElementById("plantResultBox").style.display="none";}; r.readAsDataURL(f);
 }
-
 function previewAnimal(){
-let f=document.getElementById("animalImage").files[0];
-let r=new FileReader();
-r.onload=()=>document.getElementById("animalPreview").src=r.result;
-r.readAsDataURL(f);
+  let f=document.getElementById("animalImage").files[0]; if(!f)return;
+  let r=new FileReader(); r.onload=()=>{let img=document.getElementById("animalPreview");img.src=r.result;img.style.display="block";document.getElementById("animalStatus").textContent="Image ready. Click Detect Condition.";document.getElementById("animalResultBox").style.display="none";}; r.readAsDataURL(f);
 }
-
-// DETECTION
-function detectPlant(){
-let d=["Leaf Spot","Mildew","Healthy"];
-let t=["Use fungicide","Apply pesticide","No treatment"];
-let i=Math.floor(Math.random()*3);
-plantResult.innerText="Detected: "+d[i];
-plantTreatment.innerText="Treatment: "+t[i];
+function interpretPlantPredictions(predictions){
+  const top=predictions.map(p=>p.className.toLowerCase()).join(" ");
+  if(["leaf","leaves","foliage","frond","fern","plant","herb","flower","blossom","petal"].some(k=>top.includes(k))) return {name:"Healthy Plant",confidence:"High",treatment:"No action needed. Continue regular watering and fertilization.",color:"high"};
+  if(["spot","blight","rust","mold","mildew","fungus","rot","wilt","brown","yellow"].some(k=>top.includes(k))) return {name:"Fungal Infection (Leaf Blight / Mildew)",confidence:"High",treatment:"Apply copper-based fungicide. Remove affected leaves. Improve airflow.",color:"high"};
+  if(["aphid","insect","bug","spider","mite","pest","caterpillar","larva","grub"].some(k=>top.includes(k))) return {name:"Pest Infestation",confidence:"High",treatment:"Use neem oil spray or insecticidal soap. Introduce natural predators like ladybugs.",color:"high"};
+  if(["dry","drought","sand","dust","desert","crack","wither"].some(k=>top.includes(k))) return {name:"Water Stress / Dehydration",confidence:"Medium",treatment:"Increase watering frequency. Use mulch to retain soil moisture.",color:"med"};
+  if(predictions[0].probability>0.4) return {name:"Possible Nutrient Deficiency",confidence:"Medium",treatment:"Check soil pH. Apply balanced NPK fertilizer. Ensure proper drainage.",color:"med"};
+  return {name:"Unable to Determine — Low Confidence",confidence:"Low",treatment:"Please upload a clearer, close-up image of the plant.",color:"low"};
 }
-
-function detectAnimal(){
-let d=["Skin Infection","FMD","Healthy"];
-let t=["Apply cream","Vaccinate","No treatment"];
-let i=Math.floor(Math.random()*3);
-animalResult.innerText="Detected: "+d[i];
-animalTreatment.innerText="Treatment: "+t[i];
+function interpretAnimalPredictions(predictions){
+  const top=predictions.map(p=>p.className.toLowerCase()).join(" ");
+  if(["cattle","cow","bull","ox","livestock","calf","bovine","dairy"].some(k=>top.includes(k))) return {name:"Cattle — No Visible Disease Detected",confidence:"High",treatment:"Ensure regular vaccination. Maintain clean living conditions and proper nutrition.",color:"high"};
+  if(["dog","puppy","hound","canine","poodle","retriever","terrier"].some(k=>top.includes(k))) return {name:"Canine — Monitoring Recommended",confidence:"Medium",treatment:"Check for ticks, fleas, or skin irritation. Ensure up-to-date vaccinations.",color:"med"};
+  if(["cat","kitten","feline","tabby","persian","siamese"].some(k=>top.includes(k))) return {name:"Feline — Monitoring Recommended",confidence:"Medium",treatment:"Watch for respiratory symptoms. Ensure vaccinations are current.",color:"med"};
+  if(["bird","chicken","hen","rooster","poultry","duck","goose","turkey"].some(k=>top.includes(k))) return {name:"Poultry Detected",confidence:"High",treatment:"Monitor for Newcastle disease or Avian flu. Maintain biosecurity measures.",color:"med"};
+  if(["sheep","lamb","goat","ram","ewe"].some(k=>top.includes(k))) return {name:"Small Ruminant Detected",confidence:"High",treatment:"Check for foot rot or internal parasites. Deworm regularly.",color:"med"};
+  if(["pig","hog","swine","boar","sow","piglet"].some(k=>top.includes(k))) return {name:"Swine Detected",confidence:"High",treatment:"Monitor for PRRS or swine flu. Maintain strict hygiene protocols.",color:"med"};
+  if(predictions[0].probability<0.25) return {name:"Unable to Identify Animal — Low Confidence",confidence:"Low",treatment:"Please upload a clearer image of the animal.",color:"low"};
+  return {name:"Animal Detected — General Monitoring Advised",confidence:"Medium",treatment:"Observe for signs of lethargy or loss of appetite. Consult a vet if symptoms persist.",color:"med"};
 }
-
-// LOGOUT
-function logout(){
-localStorage.removeItem("loggedIn");
-window.location.href="login.html";
+async function detectPlant(){
+  if(!model)return; let imgEl=document.getElementById("plantPreview");
+  if(!imgEl.src||imgEl.style.display==="none"){document.getElementById("plantStatus").textContent="⚠️ Please upload an image first.";return;}
+  let btn=document.getElementById("plantBtn"); btn.disabled=true; btn.innerHTML='<span class="spinner"></span>Analyzing...';
+  document.getElementById("plantStatus").textContent="🔬 Running AI analysis..."; document.getElementById("plantResultBox").style.display="none";
+  try{
+    const predictions=await model.classify(imgEl); const result=interpretPlantPredictions(predictions);
+    document.getElementById("plantResult").innerHTML=`🌿 ${result.name} <span class="confidence ${result.color}">${result.confidence} Confidence</span>`;
+    document.getElementById("plantTreatment").innerHTML=`💊 <strong>Recommendation:</strong> ${result.treatment}`;
+    document.getElementById("plantRaw").innerHTML=`AI detected: "${predictions[0].className}" (${(predictions[0].probability*100).toFixed(1)}% confidence)`;
+    document.getElementById("plantResultBox").style.display="block"; document.getElementById("plantStatus").textContent="✅ Analysis complete";
+  }catch(e){document.getElementById("plantStatus").textContent="❌ Detection failed. Try a different image.";}
+  btn.disabled=false; btn.innerHTML="Detect Disease";
 }
-
+async function detectAnimal(){
+  if(!model)return; let imgEl=document.getElementById("animalPreview");
+  if(!imgEl.src||imgEl.style.display==="none"){document.getElementById("animalStatus").textContent="⚠️ Please upload an image first.";return;}
+  let btn=document.getElementById("animalBtn"); btn.disabled=true; btn.innerHTML='<span class="spinner"></span>Analyzing...';
+  document.getElementById("animalStatus").textContent="🔬 Running AI analysis..."; document.getElementById("animalResultBox").style.display="none";
+  try{
+    const predictions=await model.classify(imgEl); const result=interpretAnimalPredictions(predictions);
+    document.getElementById("animalResult").innerHTML=`🐄 ${result.name} <span class="confidence ${result.color}">${result.confidence} Confidence</span>`;
+    document.getElementById("animalTreatment").innerHTML=`💊 <strong>Recommendation:</strong> ${result.treatment}`;
+    document.getElementById("animalRaw").innerHTML=`AI detected: "${predictions[0].className}" (${(predictions[0].probability*100).toFixed(1)}% confidence)`;
+    document.getElementById("animalResultBox").style.display="block"; document.getElementById("animalStatus").textContent="✅ Analysis complete";
+  }catch(e){document.getElementById("animalStatus").textContent="❌ Detection failed. Try a different image.";}
+  btn.disabled=false; btn.innerHTML="Detect Condition";
+}
+function logout(){ localStorage.removeItem("loggedIn"); window.location.href="login.html"; }
 </script>
-
 </body>
 </html>
 </script>
