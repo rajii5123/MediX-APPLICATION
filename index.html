@@ -1,78 +1,29 @@
 <!DOCTYPE html>
 <html>
 <head>
-<title>AI Dashboard Advanced</title>
+<title>AI Dashboard</title>
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 <style>
-body{
-    margin:0;
-    font-family:Arial;
-    background:#1f2a36;
-    color:white;
-}
+body{margin:0;font-family:Arial;background:#1f2a36;color:white;}
+header{background:#2c3e50;padding:15px;text-align:center;}
 
-header{
-    padding:15px;
-    background:#2c3e50;
-    text-align:center;
-}
+.row{display:flex;justify-content:space-around;margin:20px;}
+.card{background:#2c3e50;padding:20px;width:22%;text-align:center;border-radius:10px;}
 
-.row{
-    display:flex;
-    justify-content:space-around;
-    margin:20px;
-}
-
-.card{
-    background:#2c3e50;
-    padding:20px;
-    width:22%;
-    text-align:center;
-    border-radius:10px;
-}
-
-/* CIRCLE */
 .circle{
-    width:100px;
-    height:100px;
-    border-radius:50%;
-    background:conic-gradient(#00d4ff 75%, #444 0%);
-    display:flex;
-    align-items:center;
-    justify-content:center;
-    margin:auto;
+width:100px;height:100px;border-radius:50%;
+background:conic-gradient(#00d4ff 80%,#444 0%);
+display:flex;align-items:center;justify-content:center;margin:auto;
 }
 
-.circle span{
-    font-size:20px;
-}
+.section{display:flex;margin:20px;}
+.box{background:#2c3e50;padding:20px;margin:10px;flex:1;border-radius:10px;}
 
-/* SECTION */
-.section{
-    display:flex;
-    margin:20px;
-}
-
-.box{
-    background:#2c3e50;
-    padding:20px;
-    margin:10px;
-    flex:1;
-    border-radius:10px;
-}
-
-button{
-    padding:10px;
-    margin:10px;
-    background:#00d4ff;
-    border:none;
-    border-radius:5px;
-}
-
+button{padding:10px;margin:10px;background:#00d4ff;border:none;border-radius:5px;}
+img{margin-top:10px;}
 </style>
-
 </head>
 
 <body>
@@ -82,54 +33,49 @@ button{
 <p id="welcome"></p>
 </header>
 
-<!-- PROGRESS CIRCLES -->
+<!-- PROGRESS -->
 <div class="row">
-
-    <div class="card">
-        <h3>Health Score</h3>
-        <div class="circle"><span>85%</span></div>
-    </div>
-
-    <div class="card">
-        <h3>Crop Resistance</h3>
-        <div class="circle"><span>78%</span></div>
-    </div>
-
-    <div class="card">
-        <h3>AI Accuracy</h3>
-        <div class="circle"><span>92%</span></div>
-    </div>
-
-    <div class="card">
-        <h3>System Performance</h3>
-        <div class="circle"><span>88%</span></div>
-    </div>
-
+<div class="card"><h3>Health</h3><div class="circle"><span>85%</span></div></div>
+<div class="card"><h3>Crop</h3><div class="circle"><span>78%</span></div></div>
+<div class="card"><h3>Accuracy</h3><div class="circle"><span>92%</span></div></div>
+<div class="card"><h3>System</h3><div class="circle"><span>88%</span></div></div>
 </div>
 
 <!-- CHARTS -->
 <div class="section">
+<div class="box"><h3>Blood Analysis</h3><canvas id="bloodChart"></canvas></div>
+<div class="box"><h3>Health Graph</h3><canvas id="healthChart"></canvas></div>
+</div>
 
-    <!-- BLOOD ANALYSIS -->
-    <div class="box">
-        <h3>Blood Analysis</h3>
-        <canvas id="bloodChart"></canvas>
-    </div>
+<div class="section">
+<div class="box"><h3>Crop Resistance</h3><canvas id="cropChart"></canvas></div>
+</div>
 
-    <!-- PATIENT HEALTH -->
-    <div class="box">
-        <h3>Patient Health Graph</h3>
-        <canvas id="healthChart"></canvas>
-    </div>
+<!-- DETECTION -->
+<div class="section">
+
+<div class="box">
+<h3>🌿 Plant Detection</h3>
+<input type="file" id="plantImage" onchange="previewPlant()"><br>
+<img id="plantPreview" width="120">
+<button onclick="detectPlant()">Detect</button>
+<h4 id="plantResult"></h4>
+<p id="plantTreatment"></p>
+</div>
+
+<div class="box">
+<h3>🐄 Animal Detection</h3>
+<input type="file" id="animalImage" onchange="previewAnimal()"><br>
+<img id="animalPreview" width="120">
+<button onclick="detectAnimal()">Detect</button>
+<h4 id="animalResult"></h4>
+<p id="animalTreatment"></p>
+</div>
 
 </div>
 
-<!-- CROP GRAPH -->
-<div class="section">
-    <div class="box">
-        <h3>Crop Resistance Power</h3>
-        <canvas id="cropChart"></canvas>
-    </div>
+<div style="text-align:center;">
+<button onclick="logout()" style="background:red;color:white;">Logout</button>
 </div>
 
 <script>
@@ -142,54 +88,64 @@ if(localStorage.getItem("loggedIn")!=="true"){
 // USER
 document.getElementById("welcome").innerText="Welcome, "+localStorage.getItem("user");
 
-
-// BLOOD CHART
+// CHARTS
 new Chart(document.getElementById("bloodChart"),{
-    type:"bar",
-    data:{
-        labels:["RBC","WBC","Platelets"],
-        datasets:[{
-            label:"Levels",
-            data:[4.5, 7.2, 250],
-            backgroundColor:["red","blue","green"]
-        }]
-    }
+type:"bar",
+data:{labels:["RBC","WBC","Platelets"],datasets:[{data:[4.5,7.2,250]}]}
 });
 
-
-// HEALTH GRAPH
 new Chart(document.getElementById("healthChart"),{
-    type:"line",
-    data:{
-        labels:["Day1","Day2","Day3","Day4","Day5"],
-        datasets:[{
-            label:"Health Score",
-            data:[60,70,75,80,85],
-            borderColor:"#00d4ff",
-            fill:false
-        }]
-    }
+type:"line",
+data:{labels:["D1","D2","D3","D4"],datasets:[{data:[60,70,80,85]}]}
 });
 
-
-// CROP GRAPH
 new Chart(document.getElementById("cropChart"),{
-    type:"bar",
-    data:{
-        labels:["Nitrogen","Water","Sunlight","Soil"],
-        datasets:[{
-            label:"Resistance",
-            data:[80,70,90,85],
-            backgroundColor:["yellow","blue","orange","green"]
-        }]
-    }
+type:"bar",
+data:{labels:["Water","Soil","Sun"],datasets:[{data:[80,70,90]}]}
 });
+
+// IMAGE PREVIEW
+function previewPlant(){
+let f=document.getElementById("plantImage").files[0];
+let r=new FileReader();
+r.onload=()=>document.getElementById("plantPreview").src=r.result;
+r.readAsDataURL(f);
+}
+
+function previewAnimal(){
+let f=document.getElementById("animalImage").files[0];
+let r=new FileReader();
+r.onload=()=>document.getElementById("animalPreview").src=r.result;
+r.readAsDataURL(f);
+}
+
+// DETECTION
+function detectPlant(){
+let d=["Leaf Spot","Mildew","Healthy"];
+let t=["Use fungicide","Apply pesticide","No treatment"];
+let i=Math.floor(Math.random()*3);
+plantResult.innerText="Detected: "+d[i];
+plantTreatment.innerText="Treatment: "+t[i];
+}
+
+function detectAnimal(){
+let d=["Skin Infection","FMD","Healthy"];
+let t=["Apply cream","Vaccinate","No treatment"];
+let i=Math.floor(Math.random()*3);
+animalResult.innerText="Detected: "+d[i];
+animalTreatment.innerText="Treatment: "+t[i];
+}
+
+// LOGOUT
+function logout(){
+localStorage.removeItem("loggedIn");
+window.location.href="login.html";
+}
 
 </script>
 
 </body>
 </html>
-
 </script>
 
 </body>
